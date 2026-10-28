@@ -14,4 +14,7 @@ window.LAUNCHER_LOCAL = {
     // devLogUrl: null,
 
     // locale: 'fr-FR',
+
+    // themoviedb.org ▸ Settings ▸ API: the API key or the read access token.
+    // tmdb: { key: '' },
 };

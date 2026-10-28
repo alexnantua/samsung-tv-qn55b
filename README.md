@@ -47,7 +47,7 @@ the TV's copy wins (`config.js` only supplies the defaults).
 Beyond config: tile colours and brand marks in [`src/js/brands.js`](src/js/brands.js), the whole
 look in [`src/css/style.css`](src/css/style.css), and your own photos as wallpapers.
 
-Anything specific to your own TV — weather coordinates, a devlog address — belongs in
+Anything specific to your own TV — weather coordinates, a devlog address, a TMDB key — belongs in
 `src/js/config.local.js` instead. That file is gitignored and merged over `config.js` one level
 deep, so the tracked file keeps its nulls while the local one reaches both the browser preview and
 the packaged `.wgt`. Nothing to strip before a push, nothing to restore before a build. Copy
@@ -136,7 +136,12 @@ src/                  everything that goes into the .wgt
   js/wallpaper.js     wallpaper display and rotation
   js/screensaver.js   idle screen saver: photos, slow zoom, clock
   js/appearance.js    clock, date and font settings
-  js/weather.js       Open-Meteo reading for the screen saver corner
+  js/weather.js       Open-Meteo reading for the screen saver corner and Home's status bar
+  js/ambient.js       painted backgrounds: the Time & weather mode, the backdrop scrims
+  js/tmdb.js          TMDB: Home's Trending, Top 10 and New rows (titles on installed apps),
+                      title details, trailers, search
+  js/titles.js        title screen: synopsis, cast, a button per app it streams on, trailer
+  js/search.js        where to watch: TMDB search, with the installed app under each result
   js/prefs.js         settings saved on the TV
   js/ui.js            screens, focus, keys, toast, pop-up menu
   js/home.js          Home, All apps, Lab
@@ -155,22 +160,49 @@ docs/                 setup guide
 
 Saved on the TV in `localStorage`. They survive restarts and in-place updates, not an uninstall.
 
-- **Background** — Off (plain gradient), one photo, or rotate: on each Home, 30 s, 5 min, 15 min,
-  1 hour, daily.
+- **Background** — Off (plain gradient), one photo, rotate (on each Home, 30 s, 5 min, 15 min,
+  1 hour, daily), or Time & weather: colours that follow the hour (night, dawn, day, golden hour,
+  dusk), muted towards grey when the weather reading says cloud, rain or storm. It is painted once
+  into a small canvas and shown as an image, never as live CSS gradients (see
+  **What the hardware can afford**), and repainted only when the hour band or the sky changes.
 - **Apps on Home** — OK on an app opens Move / Remove; OK on the right-hand slot adds one.
+- **Home rows** — show, hide or reorder the rows under the apps: Connected to the TV, Trending,
+  Top 10, New. The last three need a TMDB key.
 - **Consoles** — per console: rename (on-screen keyboard), HDMI port, logo, how it opens, hide,
   reorder, remove; plus add a console.
 - **Appearance** — 24/12-hour clock, date shown/hidden, date language (English, Español, Français),
   font, app names (always / when selected / never).
 - **Navigation sound** — turn arrow-key sounds on or off, choose Soft, Warm or Bright, and preview
   the selected tone.
-- **Screen saver** — on or off, start after 3/5/10/15 min idle on Home, photo change every
-  60/75/90 s while Background is on Rotate, go dark after 30 min / 1 hour / 2 hours / never, and
-  show it now.
+- **Screen saver** — on or off, start after 3/5/10/15 min idle on Home, show the background photos
+  or (with a TMDB key) films and series from Home's rows with their name, app and rating, photo
+  change every 60/75/90 s while Background is on Rotate or films are shown, go dark after 30 min /
+  1 hour / 2 hours / never, and show it now.
 - **Samsung Home** — opens `com.samsung.tv.csfs`, from which TV settings are one press away.
   Opening `com.samsung.tv.coba.setting` directly does not work on this TV. Keep this entry: it is
   the route back if you have redirected the Home button.
 - **Advanced** — refresh the app list, export settings to the log, reset everything, Lab.
+
+### Films and series (TMDB)
+
+With a TMDB key in `config.local.js`, Home gains three rows built only from what streams in your
+region on the apps installed on this TV: **Trending**, **Top 10** (the most popular of those, with
+big outline numerals — TMDB's popularity is worldwide, so this is "most popular titles you can
+watch here", not a local chart) and **New** (films released in the last 90 days, and series with an
+episode in the last 7). While a poster has focus, Home turns into that title: its backdrop, name
+and synopsis fill the top of the screen and the rows above step aside; the picture waits until
+focus rests so sweeping along a row does not download a backdrop per poster.
+
+OK on a poster opens the title screen, with a button per installed app that has it and a
+**Trailer** button. The trailer goes to YouTube through the `PAYLOAD` app control Samsung's YouTube
+app reads deep links from; that link is unconfirmed on this TV and ignored by some YouTube builds
+(TizenTube among them), in which case YouTube simply opens. The magnifier at the top of Home is
+**where to watch**: type a film or series on the TV keyboard, and each result shows which of your
+apps has it, or that none does. The lists refresh at most every few hours and are cached on the
+TV.
+
+While Home is scrolled, a small clock and the temperature stay in the top right corner, with a
+mark when the TV is offline.
 
 ### Wallpapers
 
@@ -292,7 +324,9 @@ TV where `db/menu/smart_hub/ontvsetting/auto_start` starts at `0`.
 
 MIT for the original code and documentation — see [LICENSE](LICENSE). Bundled fonts (OFL), Unsplash
 photos and brand marks keep their own terms. Weather data by [Open-Meteo](https://open-meteo.com/),
-used under its non-commercial licence. Brand names and logos belong to their owners.
+used under its non-commercial licence. Film and series data from [TMDB](https://www.themoviedb.org/)
+(this product uses the TMDB API but is not endorsed or certified by TMDB), where-to-watch data from
+[JustWatch](https://www.justwatch.com/). Brand names and logos belong to their owners.
 
 This project is independent and is not affiliated with Samsung or any streaming service.
 

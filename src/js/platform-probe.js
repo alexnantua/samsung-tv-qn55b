@@ -28,7 +28,7 @@
     // Native bindings do not always enumerate, so known names are probed by hand as well.
     var TIZEN_NAMES = ['power', 'application', 'systeminfo', 'tvwindow', 'tvinputdevice',
         'tvaudiocontrol', 'tvdisplaycontrol', 'tvchannel', 'tvinfo', 'productinfo', 'filesystem',
-        'preference', 'time', 'websetting'];
+        'preference', 'time', 'websetting', 'account'];
 
     var WEBAPIS_NAMES = ['appcommon', 'productinfo', 'network', 'avplay', 'avinfo', 'tvinfo',
         'adinfo', 'sso', 'recognition', 'tvwindow', 'power', 'display'];

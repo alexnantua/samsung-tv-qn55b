@@ -89,7 +89,35 @@
     // ---------- Photos
 
     function rotating() {
-        return Prefs.get().wallpaper.mode === 'rotate' && Wallpaper.list().length > 1;
+        return films().length > 1 || (Prefs.get().wallpaper.mode === 'rotate' && Wallpaper.list().length > 1);
+    }
+
+    /*
+     * Show ▸ Films: the backdrops of the titles on Home's rows instead of the photos, each with its
+     * name, app and rating. Empty — and so back to the photos — without a TMDB key or before the
+     * first list arrives.
+     */
+    function films() {
+        if (prefs().source !== 'titles' || !Tmdb.configured()) return [];
+        var seen = {};
+        return ['trending', 'top', 'fresh'].reduce(function (all, row) {
+            return all.concat(Tmdb.list(row));
+        }, []).filter(function (title) {
+            var k = title.type + '/' + title.id;
+            if (!title.backdrop || seen[k]) return false;
+            seen[k] = true;
+            return true;
+        });
+    }
+
+    function film(title) {
+        return {
+            key: title.type + '/' + title.id,
+            file: Tmdb.image(title.backdrop, 'w1280'),
+            title: title.title,
+            sub: Home.titleSub(title),
+            film: true
+        };
     }
 
     /*
@@ -98,16 +126,21 @@
      * the Home wallpaper or restart its rotation clock, so Prefs.wallpaper is read, never written.
      */
     function photoAt(i) {
+        var list = films();
+        if (list.length) return film(list[((i % list.length) + list.length) % list.length]);
         var p = Prefs.get().wallpaper;
         if (p.mode === 'off') return null;
-        var list = Wallpaper.list();
+        list = Wallpaper.list();
         if (!list.length) return null;
-        if (p.mode !== 'rotate') return Wallpaper.find(p.photo);
+        if (p.mode !== 'rotate') return Wallpaper.current();
         return list[((i % list.length) + list.length) % list.length];
     }
 
     // Continue from whatever is already on Home, so opening the screen saver is not a jump cut.
+    // Films start somewhere new each time.
     function startIndex() {
+        var n = films().length;
+        if (n) return Math.floor(Math.random() * n);
         var key = Prefs.get().wallpaper.photo;
         var i = Wallpaper.list().findIndex(function (w) { return w.key === key; });
         return i < 0 ? 0 : i;
@@ -211,7 +244,9 @@
 
     function caption(w) {
         $('ss-title').textContent = w ? w.title : '';
-        $('ss-caption').classList.toggle('hidden', !w);
+        $('ss-sub').textContent = w && w.sub || '';
+        $('ss-caption').classList.toggle('hidden', !w || !w.title);
+        $('ss-caption').classList.toggle('film', !!(w && w.film));
     }
 
     // A few pixels on each photo change, so even the text that stays put does not stay put.

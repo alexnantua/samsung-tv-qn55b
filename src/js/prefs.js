@@ -11,13 +11,14 @@
     function defaults() {
         var cfg = window.LAUNCHER_CONFIG || {};
         var theme = cfg.theme || {};
+        var weather = cfg.weather || {};
         return {
             sound: {
                 enabled: cfg.sound ? cfg.sound.enabled !== false : true,
                 preset: cfg.sound && cfg.sound.preset || 'soft'
             },
             wallpaper: {
-                mode: theme.wallpaper ? 'photo' : 'off',   // 'off' | 'photo' | 'rotate'
+                mode: theme.wallpaper ? 'photo' : 'off',   // 'off' | 'photo' | 'rotate' | 'ambient'
                 photo: theme.wallpaper || 'forest',
                 interval: '15m',        // see Wallpaper.INTERVALS
                 lastChange: 0
@@ -26,15 +27,25 @@
                 enabled: true,
                 delay: '5m',            // see Screensaver.DELAYS
                 photoEvery: '75s',      // see Screensaver.PHOTO_EVERY
-                dark: '1h'              // see Screensaver.DARK_AFTER
+                dark: '1h',             // see Screensaver.DARK_AFTER
+                source: 'photos'        // 'photos' (the Background) | 'titles' (TMDB backdrops)
             },
             appearance: {
                 clock: '24h',           // '24h' | '12h'
                 showDate: true,
                 locale: cfg.locale || 'en-GB',
                 font: 'manrope',        // see Appearance.FONTS
-                names: 'always'         // app names under tiles: 'always' | 'focused' | 'never'
+                names: 'always',        // app names under tiles: 'always' | 'focused' | 'never'
+                name: cfg.name || ''    // first name in the Home greeting; '' = the TV account's, if any
             },
+            weather: {
+                name: weather.name || null,
+                latitude: typeof weather.latitude === 'number' ? weather.latitude : null,
+                longitude: typeof weather.longitude === 'number' ? weather.longitude : null,
+                unit: weather.unit === 'fahrenheit' ? 'fahrenheit' : 'celsius'
+            },
+            // Rows under the apps, top to bottom, and the ones switched off. See Home.ROWS.
+            rows: { order: ['inputs', 'trending', 'top', 'fresh'], hidden: [] },
             home: null,                 // [{ id, label, brand }] once edited; null = config.js apps
             inputs: null                // [{ hdmi, label, brand, method, hidden }] once edited; null = config.js
         };
@@ -56,6 +67,16 @@
                 merge(prefs.wallpaper, saved.wallpaper);
                 merge(prefs.screensaver, saved.screensaver);
                 merge(prefs.appearance, saved.appearance);
+                if (saved.rows && Array.isArray(saved.rows.order)) {
+                    // A row added in a later version goes at the end rather than missing.
+                    var known = prefs.rows.order;
+                    prefs.rows.order = saved.rows.order.filter(function (k) { return known.indexOf(k) >= 0; })
+                        .concat(known.filter(function (k) { return saved.rows.order.indexOf(k) < 0; }));
+                    prefs.rows.hidden = Array.isArray(saved.rows.hidden) ? saved.rows.hidden : [];
+                }
+                // A city chosen on the TV wins over config.js; until then the config default stands.
+                if (saved.weather && typeof saved.weather.latitude === 'number') merge(prefs.weather, saved.weather);
+                else if (saved.weather && saved.weather.unit) prefs.weather.unit = saved.weather.unit;
                 if (Array.isArray(saved.home) && saved.home.length) prefs.home = saved.home;
                 if (Array.isArray(saved.inputs)) prefs.inputs = saved.inputs;
             } else {

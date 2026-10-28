@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=1920, height=1080">
     <title>Arn0 Launcher</title>
+    <!-- The default font, fetched alongside the stylesheet instead of after the first layout. -->
+    <link rel="preload" href="fonts/manrope.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,29 +13,124 @@
         <div id="bg"></div>
 
         <section id="home" class="view">
-            <header class="clock">
+            <!-- Behind Home while a title row has focus: that title's backdrop, name and synopsis.
+                 See spotlight() in home.js. -->
+            <div id="spot" class="spot">
+                <img id="spot-a" class="spot-img" alt="">
+                <img id="spot-b" class="spot-img" alt="">
+                <img id="spot-shade" class="spot-shade" alt="">
+                <div class="spot-info">
+                    <h1 id="spot-name"></h1>
+                    <div id="spot-meta" class="tt-meta"></div>
+                    <p id="spot-overview" class="spot-overview"></p>
+                </div>
+            </div>
+            <!-- Rows stop above the hint bar instead of running under it. -->
+            <div class="home-clip">
+            <!-- Slides up as a row below the screen takes focus; see scrollHome in home.js. -->
+            <div id="home-scroll" class="home-scroll">
+            <header class="hero">
+                <div id="greeting" class="greeting"></div>
                 <div id="time"><span id="time-main"></span><span id="time-suffix"></span></div>
                 <div id="date"></div>
             </header>
-            <div id="gear" class="gear">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3.2"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
+            <div class="top-actions">
+                <!-- Filled by home.js from Weather.forecast(); OK opens the forecast screen. -->
+                <div id="wx-card" class="wx-card"></div>
+                <!-- Where to watch: search TMDB. Only with a TMDB key. -->
+                <div id="search-btn" class="gear hidden">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <circle cx="10.5" cy="10.5" r="6.5"/>
+                        <path d="M15.5 15.5 21 21"/>
+                    </svg>
+                </div>
+                <div id="gear" class="gear">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3.2"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </div>
             </div>
-            <div id="apps-section" class="shelf">
-                <h2>Apps</h2>
-                <div class="row-viewport"><div id="apps-row" class="row-track"></div></div>
+            <div class="shelves">
+                <div id="apps-section" class="shelf">
+                    <h2 id="apps-title"></h2>
+                    <div class="row-viewport"><div id="apps-row" class="row-track"></div></div>
+                </div>
+                <div id="inputs-section" class="shelf hidden" data-row="inputs">
+                    <h2 id="inputs-title"></h2>
+                    <div class="row-viewport"><div id="inputs-row" class="row-track"></div></div>
+                </div>
+                <!-- The rows below are put in the order chosen in Settings ▸ Home rows. -->
+                <div id="trending-section" class="shelf hidden" data-row="trending">
+                    <h2 id="trending-title"></h2>
+                    <div class="row-viewport"><div id="trending-row" class="row-track"></div></div>
+                </div>
+                <div id="top-section" class="shelf hidden" data-row="top">
+                    <h2 id="top-title"></h2>
+                    <div class="row-viewport"><div id="top-row" class="row-track"></div></div>
+                </div>
+                <div id="fresh-section" class="shelf hidden" data-row="fresh">
+                    <h2 id="fresh-title"></h2>
+                    <div class="row-viewport"><div id="fresh-row" class="row-track"></div></div>
+                </div>
             </div>
-            <div id="inputs-section" class="shelf">
-                <h2>Consoles</h2>
-                <div class="row-viewport"><div id="inputs-row" class="row-track"></div></div>
             </div>
+            </div>
+            <!-- Clock and weather in small type while the big ones are scrolled away. -->
+            <div id="statusbar" class="statusbar">
+                <span id="sb-net" class="sb-net hidden">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/>
+                        <path d="M3 3l18 18"/>
+                    </svg>
+                </span>
+                <span id="sb-wx" class="sb-wx"></span>
+                <span id="sb-time" class="sb-time"></span>
+            </div>
+        </section>
+
+        <section id="title" class="view hidden">
+            <img id="tt-backdrop" class="tt-backdrop" alt="">
+            <img id="tt-shade" class="tt-shade" alt="">
+            <div class="tt-info">
+                <h1 id="tt-name"></h1>
+                <div id="tt-meta" class="tt-meta"></div>
+                <div id="tt-tagline" class="tt-tagline"></div>
+                <p id="tt-overview" class="tt-overview"></p>
+                <div id="tt-cast" class="tt-cast"></div>
+                <div id="tt-actions" class="tt-actions"></div>
+                <div id="tt-note" class="tt-note"></div>
+            </div>
+            <!-- TMDB and JustWatch both ask for this credit wherever their data shows. -->
+            <div class="tt-credit">TMDB · JustWatch</div>
+        </section>
+
+        <section id="search" class="view page hidden">
+            <header class="page-head">
+                <div>
+                    <h1 id="search-title"></h1>
+                    <div id="search-sub" class="page-sub"></div>
+                </div>
+                <div id="search-actions" class="chips"></div>
+            </header>
+            <div class="grid-viewport"><div id="search-grid" class="grid poster-grid"></div></div>
+            <div class="tt-credit">TMDB · JustWatch</div>
+        </section>
+
+        <section id="weather" class="view page hidden">
+            <header class="page-head">
+                <div>
+                    <h1 id="fc-title"></h1>
+                    <div id="fc-updated" class="page-sub"></div>
+                </div>
+                <div id="fc-actions" class="chips"></div>
+            </header>
+            <div id="fc-body" class="fc-body"></div>
         </section>
 
         <section id="all" class="view page hidden">
             <header class="page-head">
-                <h1>All apps</h1>
+                <h1 id="all-title">All apps</h1>
                 <div id="all-count"></div>
             </header>
             <div class="grid-viewport"><div id="all-grid" class="grid"></div></div>
@@ -77,6 +174,11 @@
             <div id="sound-body" class="settings-body compact"></div>
         </section>
 
+        <section id="homerows" class="view page hidden">
+            <header class="page-head"><h1>Home rows</h1></header>
+            <ul class="settings-list"></ul>
+        </section>
+
         <section id="advanced" class="view page hidden">
             <header class="page-head"><h1>Advanced</h1></header>
             <ul class="settings-list"></ul>
@@ -117,6 +219,7 @@
             <div class="ss-scrim"></div>
             <div id="ss-caption" class="ss-caption">
                 <div id="ss-title" class="ss-title"></div>
+                <div id="ss-sub" class="ss-sub"></div>
             </div>
             <div id="ss-clock" class="ss-clock pos-0">
                 <div id="ss-weather" class="ss-weather hidden">
@@ -140,7 +243,7 @@
 
         <div id="rename" class="view overlay hidden">
             <div class="menu-box">
-                <div class="dialog-title">Name</div>
+                <div id="rename-title" class="dialog-title">Name</div>
                 <input id="rename-input" type="text" maxlength="28" autocomplete="off" spellcheck="false">
             </div>
         </div>
@@ -167,11 +270,14 @@
     <script src="js/wallpapers.js"></script>
     <script src="js/devlog.js"></script>
     <script src="js/prefs.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/apps.js"></script>
     <script src="js/inputs.js"></script>
     <script src="js/wallpaper.js"></script>
     <script src="js/appearance.js"></script>
     <script src="js/weather.js"></script>
+    <script src="js/ambient.js"></script>
+    <script src="js/tmdb.js"></script>
     <script src="js/sound.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/render-probe.js"></script>
@@ -179,6 +285,9 @@
     <script src="js/screensaver.js"></script>
     <script src="js/home.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/forecast.js"></script>
+    <script src="js/titles.js"></script>
+    <script src="js/search.js"></script>
     <script src="js/runner-game.js"></script>
     <script src="js/boot.js"></script>
 </body>

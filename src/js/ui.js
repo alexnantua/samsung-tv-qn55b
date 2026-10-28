@@ -10,6 +10,8 @@
  *               or 'pass' to leave it to the browser (e.g. typing in a text field)
  *   onBack()    return true if Back was handled inside the view
  *   onFocus(el) called after focus moves
+ *   restoreRows returning to a row puts focus back where it was in that row, rather than on
+ *               the element nearest the one just left
  *   overlay     shown on top of the previous view instead of replacing it
  *   hints       remote keys to show along the bottom: [['OK', 'Open'], ['Back', 'Home']].
  *               A function instead of an array is called on every show, for hints that depend
@@ -116,9 +118,16 @@
         return r[f.r][f.c];
     }
 
+    /*
+     * Only one element is ever focused, so the previous one is remembered rather than found with
+     * a document-wide query on every key press: on a held arrow key that query ran 15+ times a
+     * second over every tile on every screen.
+     */
+    var focusedNow = null;
+
     function setFocus(target) {
-        var prev = document.querySelectorAll('.focused');
-        for (var i = 0; i < prev.length; i++) prev[i].classList.remove('focused');
+        if (focusedNow && focusedNow !== target) focusedNow.classList.remove('focused');
+        focusedNow = target || null;
         if (!target) return;
         target.classList.add('focused');
         ensureVisible(target);
@@ -163,8 +172,9 @@
             if (nr !== f.r) {
                 f.last[f.r] = f.c;
                 var best = 0;
-                // Leaving a single-item row (e.g. the gear) returns to where we were in the target row.
-                if (r[f.r].length === 1 && f.last[nr] !== undefined) {
+                // Leaving a single-item row (e.g. a button) returns to where we were in the target
+                // row; so does every row of a view that asks for it with `restoreRows` (Home).
+                if ((r[f.r].length === 1 || views[current].restoreRows) && f.last[nr] !== undefined) {
                     best = clamp(f.last[nr], 0, r[nr].length - 1);
                 } else {
                     var x = centerX(r[f.r][f.c]);

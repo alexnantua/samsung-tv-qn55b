@@ -22,6 +22,10 @@
         app('com.samsung.tv.aria-video', 'Apple TV'),
         app('rJeHak5zRg.Spotify', 'Spotify'),
         app('Jz7aUrV2Q4.Twitch', 'Twitch'),
+        app('GloboPlay0.Globoplay', 'Globoplay'),
+        app('HboMaxApp0.Max', 'Max'),
+        app('Paramount0.ParamountPlus', 'Paramount+'),
+        app('Crunchyrol.Crunchyroll', 'Crunchyroll'),
         app('E0P3lRI4H7.MYTF1', 'TF1+ : Streaming, TV en Direct'),
         app('MovistarPl.MovistarPlus', 'Movistar Plus+'),
         app('PlexMedia0.Plex', 'Plex'),
@@ -56,6 +60,10 @@
                 }
                 later(ok);
             },
+            launchAppControl: function (control, id, ok) {
+                console.log('[mock] launchAppControl', id, JSON.stringify(control));
+                later(ok);
+            },
             getCurrentApplication: function () {
                 return { appInfo: { id: 'Arn0Lnchr0.Launcher' }, exit: function () {}, hide: function () {} };
             }
@@ -71,6 +79,14 @@
             getSource: function () { return currentSource; },
             show: function (ok) { console.log('[mock] tvwindow.show'); later(ok); },
             hide: function (ok) { console.log('[mock] tvwindow.hide'); later(ok); }
+        },
+        ApplicationControl: function (operation, uri, mime, category, data) {
+            this.operation = operation;
+            this.data = data || [];
+        },
+        ApplicationControlData: function (key, value) {
+            this.key = key;
+            this.value = value;
         },
         tvinputdevice: {
             registerKey: function () {},

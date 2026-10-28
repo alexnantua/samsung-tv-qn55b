@@ -14,6 +14,9 @@
 
     UI.init();
     Settings.init();
+    Forecast.init();
+    Titles.init();
+    Search.init();
     Screensaver.init();
     Weather.start();
     Home.init();

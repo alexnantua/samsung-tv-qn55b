@@ -2,6 +2,7 @@
  * Tile styling per brand. `match` is tested against "<name> <id>" of an installed app.
  * `mark` is a file in img/marks/; the build recolours it in `fg` (img/tiles/<key>.svg), shown over `bg`.
  * `text` instead of `mark` draws a typographic logo (for brands without an available mark).
+ * `glow` optionally sets the colour of the focus glow (default: the first colour in `bg`).
  * `pad` optionally overrides the mark's [vertical, horizontal] inset in % of the tile (default [26, 22]).
  */
 window.BRANDS = [
@@ -17,6 +18,8 @@ window.BRANDS = [
     { key: 'plex', match: /plex/i, mark: 'plex', bg: '#1f1f1f', fg: '#e5a00d' },
     { key: 'twitch', match: /twitch/i, mark: 'twitch', bg: '#9146ff', fg: '#fff' },
     { key: 'tf1', match: /tf1/i, text: 'TF1+', bg: 'linear-gradient(135deg,#071a4d,#1d4ed8)', fg: '#fff' },
+    { key: 'globoplay', match: /globoplay/i, text: 'globoplay', bg: 'linear-gradient(135deg,#ff6a00,#ff0a54)', fg: '#fff', glow: '#ff3d3d' },
+    { key: 'paramountplus', match: /paramount/i, mark: 'paramountplus', bg: 'linear-gradient(135deg,#0033a0,#0064ff)', fg: '#fff' },
     { key: 'crunchyroll', match: /crunchyroll/i, mark: 'crunchyroll', bg: '#f47521', fg: '#fff' },
 
     // Consoles (used by inputs in config.js)

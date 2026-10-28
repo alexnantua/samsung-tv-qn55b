@@ -45,6 +45,26 @@
         }), 8000, 'Launch');
     }
 
+    /*
+     * A YouTube video, through the app control Samsung's YouTube app reads its deep links from
+     * (a PAYLOAD of "v=<id>"). Unconfirmed on this TV and ignored by some builds (TizenTube among
+     * them): when the app control is refused, YouTube is simply opened.
+     */
+    function launchVideo(appId, videoId) {
+        return withTimeout(new Promise(function (resolve, reject) {
+            if (!tizen.application.launchAppControl || !window.tizen.ApplicationControl) {
+                reject(new Error('no app controls on this TV'));
+                return;
+            }
+            var data = [new tizen.ApplicationControlData('PAYLOAD', [JSON.stringify({ values: 'v=' + videoId })])];
+            var control = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', null, null, null, data);
+            tizen.application.launchAppControl(control, appId, resolve, reject);
+        }), 8000, 'Trailer').catch(function (err) {
+            DevLog.log('Trailer link refused (' + DevLog.errorText(err) + '): opening YouTube');
+            return launch(appId);
+        });
+    }
+
     function isConsumer(app) {
         if (PRELOADED.indexOf(app.id) >= 0) return true;
         if (!app.show || INTERNAL.indexOf(app.id) >= 0) return false;
@@ -121,6 +141,7 @@
         allSorted: allSorted,
         describe: describe,
         launch: launch,
+        launchVideo: launchVideo,
         withTimeout: withTimeout
     };
 })();

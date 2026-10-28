@@ -12,6 +12,7 @@
     ];
 
     var token = 0;
+    var ambientKey = null;
 
     function list() { return window.WALLPAPERS || []; }
 
@@ -42,9 +43,16 @@
         img.src = w.file;
     }
 
-    function apply() {
+    // 'ambient' paints its own picture from the hour and the sky: see js/ambient.js.
+    function current() {
         var p = Prefs.get().wallpaper;
-        display(p.mode === 'off' ? null : find(p.photo));
+        if (p.mode === 'off') return null;
+        return p.mode === 'ambient' ? Ambient.image() : find(p.photo);
+    }
+
+    function apply() {
+        ambientKey = Ambient.key();
+        display(current());
     }
 
     function next() {
@@ -54,7 +62,7 @@
         var i = l.findIndex(function (w) { return w.key === p.photo; });
         p.photo = l[(i + 1) % l.length].key;
         p.lastChange = Date.now();
-        if (p.mode === 'off') p.mode = 'photo';
+        if (p.mode === 'off' || p.mode === 'ambient') p.mode = 'photo';
         Prefs.save();
         apply();
         return find(p.photo);
@@ -80,14 +88,22 @@
         // comes back to.
         setInterval(function () {
             if (window.Screensaver && Screensaver.isOpen()) return;
-            if (!document.hidden && due()) next();
+            if (document.hidden) return;
+            if (due()) next();
+            else if (Prefs.get().wallpaper.mode === 'ambient' && Ambient.key() !== ambientKey) apply();
         }, 5 * 1000);
+        if (window.Weather) {
+            Weather.onUpdate(function () {
+                if (Prefs.get().wallpaper.mode === 'ambient' && Ambient.key() !== ambientKey) apply();
+            });
+        }
     }
 
     window.Wallpaper = {
         INTERVALS: INTERVALS,
         list: list,
         find: find,
+        current: current,
         interval: interval,
         apply: apply,
         next: next,

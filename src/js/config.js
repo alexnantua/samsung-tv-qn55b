@@ -7,27 +7,30 @@
  *   { match: 'netflix' }              case-insensitive regex on id or name
  *   label                             optional display name
  *   brand                             optional key from js/brands.js (otherwise guessed from the name)
+ *   hidden: true                      kept here but not shown on Home; still in All apps, and
+ *                                     Settings ▸ Apps on Home can add it back
  * Entries that match nothing are skipped.
  *
- * inputs: HDMI ports shown in the second row. Set `hdmi` to the port each device is plugged into.
+ * inputs: Home shows every HDMI port the TV reports as connected, and only those. An entry here
+ *   just names a port ({ hdmi: 2, label: 'PlayStation 5', brand: 'playstation' }) or keeps it off
+ *   Home (hidden: true); unnamed ports show as "HDMI 2". Settings ▸ Consoles edits the same list.
  */
 window.LAUNCHER_CONFIG = {
     apps: [
-        { id: 'xvvl3S1TT1.TizenTubeStandalone', label: 'YouTube', brand: 'youtube' },
-        { id: 'rJeHak5zRg.Spotify', label: 'Spotify' },
-        { id: 'Jz7aUrV2Q4.Twitch', label: 'Twitch' },
-        { id: 'E0P3lRI4H7.MYTF1', label: 'TF1+' },
-        { id: 'org.tizen.netflix-app', label: 'Netflix' },
+        { match: 'tizentube|youtube', label: 'YouTube', brand: 'youtube' },
         { id: 'org.tizen.primevideo', label: 'Prime Video' },
-        { id: 'MCmYXNxgcu.DisneyPlus', label: 'Disney+' },
-        { id: 'com.samsung.tv.aria-video', label: 'Apple TV' }
+        { match: 'spotify', label: 'Spotify' },
+        { id: 'org.tizen.netflix-app', label: 'Netflix', hidden: true },
+        { match: 'globoplay', label: 'Globoplay', brand: 'globoplay', hidden: true },
+        { match: 'disney', label: 'Disney+', hidden: true },
+        { match: '(^|\\s)max(\\s|$)|hbo', label: 'Max', brand: 'max', hidden: true },
+        { id: 'com.samsung.tv.aria-video', label: 'Apple TV', hidden: true },
+        { match: 'paramount', label: 'Paramount+', hidden: true },
+        { match: 'crunchyroll', label: 'Crunchyroll', hidden: true },
+        { match: 'twitch', label: 'Twitch', hidden: true }
     ],
 
-    inputs: [
-        { hdmi: 1, label: 'Nintendo Switch 2', brand: 'switch' },
-        { hdmi: 2, label: 'PlayStation 5', brand: 'playstation' },
-        { hdmi: 4, label: 'Xbox Series X', brand: 'xbox' }
-    ],
+    inputs: [],
 
     // How an input tile switches the TV. See README "HDMI inputs".
     //   'switch+viewer'  set the TV source, then open Samsung's TV viewer (default)
@@ -35,7 +38,15 @@ window.LAUNCHER_CONFIG = {
     //   'inapp'          show the input full screen inside the launcher (Back returns)
     inputMethod: 'switch+viewer',
 
-    locale: 'en-GB',
+    locale: 'pt-BR',
+
+    // Added to the greeting ("Boa noite, Alex"). Settings ▸ Your name changes it on the TV.
+    name: '',
+
+    // Home ▸ "Em alta nos seus apps" and its title screen, from TMDB. Put the key in
+    // config.local.js, never here: either the v3 API key or the v4 read access token. The region
+    // (where-to-watch data) defaults to the locale's country.
+    tmdb: { key: '', region: '' },
 
     theme: {
         // Starting wallpaper (key from js/wallpapers.js), or null for none (plain gradient).
@@ -44,15 +55,12 @@ window.LAUNCHER_CONFIG = {
     },
 
     /*
-     * Weather shown in the screen saver's corner, from Open-Meteo. No API key and nothing to
-     * keep secret, so this is the whole setup: put your own coordinates here (two decimals is
-     * plenty, and is also about as precise as you want a public request to be). Leave them null
-     * and the widget never appears.
-     *
-     * There is no Settings page for this on purpose — the TV does not move, and coordinates are
-     * not something you type with a remote.
+     * Weather on Home, the forecast screen and the screen saver, from Open-Meteo. No API key and
+     * nothing to keep secret. The city is normally chosen on the TV itself (Home ▸ weather card ▸
+     * Change city); these coordinates are only the default until then. Two decimals is plenty.
      */
     weather: {
+        name: null,             // shown on the forecast screen, e.g. 'São Paulo'
         latitude: null,
         longitude: null,
         unit: 'celsius'         // 'celsius' | 'fahrenheit'

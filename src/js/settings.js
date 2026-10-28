@@ -99,6 +99,7 @@
     function wallpaperSummary() {
         var p = Prefs.get().wallpaper;
         if (p.mode === 'off') return 'Off';
+        if (p.mode === 'ambient') return 'Time & weather';
         if (p.mode === 'rotate') return 'Rotate · ' + Wallpaper.interval(p.interval).label.toLowerCase();
         var w = Wallpaper.find(p.photo);
         return w ? w.title : 'Photo';
@@ -106,17 +107,93 @@
 
     function overviewEntries() {
         var a = Prefs.get().appearance;
-        var shown = Home.inputs().filter(function (i) { return !i.hidden; }).length;
+        var hdmi = Home.hdmiStatus();
+        var plugged = Object.keys(hdmi).filter(function (n) { return hdmi[n]; }).length;
         return [
             { label: 'Background', value: wallpaperSummary(), run: function () { UI.show('bg'); } },
             { label: 'Apps on Home', value: Home.homeItems().length + ' apps', run: function () { UI.show('homeapps'); } },
-            { label: 'Consoles', value: shown + ' on Home', run: function () { UI.show('consoles'); } },
+            { label: 'Home rows', value: homeRowsSummary(), run: function () { UI.show('homerows'); } },
+            { label: 'Consoles', value: plugged + ' connected now', run: function () { UI.show('consoles'); } },
             { label: 'Appearance', value: Appearance.font(a.font).label + ' · ' + (a.clock === '12h' ? '12-hour' : '24-hour'), run: function () { UI.show('appearance'); } },
+            { label: 'Your name', value: nameSummary(), run: function () {
+                Settings.prompt('Your name', a.name || '', function (value) {
+                    a.name = value.trim();
+                    Prefs.save();
+                    Home.updateClock();
+                });
+            } },
             { label: 'Navigation sound', value: soundSummary(), run: function () { UI.show('sound-settings'); } },
             { label: 'Screen saver', value: screensaverSummary(), run: function () { UI.show('screensaver-settings'); } },
+            { label: 'Weather', value: weatherSummary(), run: function () {
+                if (Weather.configured()) UI.show('weather');
+                else Forecast.changeCity();
+            } },
             { label: 'Samsung Home', value: 'Smart Hub and TV settings', run: openSamsungHome },
             { label: 'Advanced', value: 'Refresh, reset, Lab', run: function () { UI.show('advanced'); } }
         ];
+    }
+
+    // ---------- Home rows: which shelves show under the apps, and in what order
+
+    function homeRowsSummary() {
+        var r = Prefs.get().rows;
+        var shown = r.order.filter(function (k) { return r.hidden.indexOf(k) < 0; });
+        return shown.length + ' of ' + r.order.length + ' shown';
+    }
+
+    var renderHomeRows = null;
+
+    function homeRowEntries() {
+        var r = Prefs.get().rows;
+        return r.order.map(function (key, i) {
+            var row = Home.ROWS.find(function (x) { return x.key === key; }) || {};
+            var on = r.hidden.indexOf(key) < 0;
+            var value = on ? 'Shown' : 'Hidden';
+            if (row.tmdb && !Tmdb.configured()) value += ' · needs a TMDB key';
+            return { label: (i + 1) + '.  ' + Home.rowLabel(key), value: value, run: function () { homeRowMenu(key); } };
+        });
+    }
+
+    function homeRowMenu(key) {
+        var r = Prefs.get().rows;
+        var i = r.order.indexOf(key);
+        var on = r.hidden.indexOf(key) < 0;
+        var change = function (fn) {
+            return function () {
+                fn();
+                Prefs.save();
+                Home.relabel();
+                renderHomeRows();
+                UI.focusOn($('homerows').querySelector('ul').children[r.order.indexOf(key)]);
+            };
+        };
+        var move = function (by) {
+            return change(function () {
+                r.order.splice(i, 1);
+                r.order.splice(i + by, 0, key);
+            });
+        };
+        var options = [{
+            label: on ? 'Hide' : 'Show', run: change(function () {
+                if (on) r.hidden.push(key);
+                else r.hidden.splice(r.hidden.indexOf(key), 1);
+            })
+        }];
+        if (i > 0) options.push({ label: 'Move up', run: move(-1) });
+        if (i < r.order.length - 1) options.push({ label: 'Move down', run: move(1) });
+        UI.menu(Home.rowLabel(key), options);
+    }
+
+    function nameSummary() {
+        var a = Prefs.get().appearance;
+        if ((a.name || '').trim()) return a.name.trim();
+        return Home.greetingName() ? Home.greetingName() + ' · from the TV account' : 'Not set';
+    }
+
+    function weatherSummary() {
+        var p = Weather.place();
+        if (!p) return 'Choose a city';
+        return (p.name || p.latitude + ', ' + p.longitude) + ' · ' + (Weather.unit() === 'fahrenheit' ? '°F' : '°C');
     }
 
     // ---------- Chips (Background, Appearance)
@@ -146,7 +223,7 @@
 
         var modes = $('bg-mode');
         modes.innerHTML = '';
-        [['off', 'Off'], ['photo', 'Photo'], ['rotate', 'Rotate']].forEach(function (m) {
+        [['off', 'Off'], ['photo', 'Photo'], ['rotate', 'Rotate'], ['ambient', 'Time & weather']].forEach(function (m) {
             modes.appendChild(chip(m[1], p.mode === m[0], { kind: 'mode', key: m[0] }));
         });
 
@@ -194,7 +271,7 @@
         return [
             { title: 'Clock', key: 'clock', options: [['24h', '24-hour'], ['12h', '12-hour']] },
             { title: 'Date', key: 'showDate', options: [[true, 'Show'], [false, 'Hide']] },
-            { title: 'Date language', key: 'locale', options: Appearance.LOCALES.map(function (l) { return [l.key, l.label]; }) },
+            { title: 'Language', key: 'locale', options: Appearance.LOCALES.map(function (l) { return [l.key, l.label]; }) },
             { title: 'Font', key: 'font', options: Appearance.FONTS.map(function (f) { return [f.key, f.label, f.family]; }) },
             { title: 'App names', key: 'names', options: [['always', 'Always'], ['focused', 'When selected'], ['never', 'Never']] }
         ];
@@ -222,7 +299,7 @@
         Prefs.get().appearance[item.key] = item.value;
         Prefs.save();
         Appearance.apply();
-        Home.updateClock();
+        Home.relabel();
         renderAppearance();
         UI.refresh();
     }
@@ -295,14 +372,18 @@
 
     /*
      * "Change photo" only means something while the Background is on Rotate: with a single
-     * photo the screen saver holds it, exactly as Home does.
+     * photo the screen saver holds it, exactly as Home does. Films always change.
      */
     function screensaverBlocks() {
         var blocks = [
             { title: 'Screen saver', key: 'enabled', options: [[true, 'On'], [false, 'Off']] },
             { title: 'Start after', key: 'delay', options: optionPairs(Screensaver.DELAYS) }
         ];
-        if (Prefs.get().wallpaper.mode === 'rotate') {
+        // Films: the backdrops of the titles on Home's rows, from TMDB.
+        if (Tmdb.configured()) {
+            blocks.push({ title: 'Show', key: 'source', options: [['photos', 'Background photos'], ['titles', 'Films and series']] });
+        }
+        if (Prefs.get().wallpaper.mode === 'rotate' || (Tmdb.configured() && Prefs.get().screensaver.source === 'titles')) {
             blocks.push({ title: 'Change photo every', key: 'photoEvery', options: optionPairs(Screensaver.PHOTO_EVERY) });
         }
         blocks.push({ title: 'Go dark after', key: 'dark', options: optionPairs(Screensaver.DARK_AFTER) });
@@ -607,8 +688,9 @@
 
     var renameDone = null;
 
-    function rename(current, done) {
+    function rename(current, done, title) {
         renameDone = done;
+        $('rename-title').textContent = title || 'Name';
         $('rename-input').value = current;
         UI.show('rename');
     }
@@ -665,6 +747,7 @@
         registerList('settings', overviewEntries,
             [['OK', 'Change'], ['◀ ▶', 'Switch column'], ['Back', 'Home']], true);
         registerList('advanced', advancedEntries, [['OK', 'Run'], ['Back', 'Settings']]);
+        renderHomeRows = registerList('homerows', homeRowEntries, [['OK', 'Show, hide or move'], ['Back', 'Settings']]);
         renderConsoles = registerList('consoles', consoleEntries,
             [['OK', 'Options'], ['Back', 'Settings']]);
 
@@ -760,5 +843,9 @@
         });
     }
 
-    window.Settings = { init: init };
+    window.Settings = {
+        init: init,
+        // Free text from the on-screen keyboard: prompt(title, initial, done(value)).
+        prompt: function (title, current, done) { rename(current, done, title); }
+    };
 })();
